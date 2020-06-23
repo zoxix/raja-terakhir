@@ -10,6 +10,8 @@
 #include <IRsend.h>
 #include <ir_Daikin.h>
 
+// void ICACHE_RAM_ATTR ON_OFF();
+
 const char *ssid = "Wifi Rumah";
 const char *password = "123456789987654321";
 const char *mqtt_server = "ee.unsoed.ac.id";
@@ -398,7 +400,7 @@ void set_wifi()
   Serial.println("HTTP server started");
 }
 
-void ON_OFF()
+void  ICACHE_RAM_ATTR ON_OFF()
 {
   if (statSystem == 0)
     statSystem = 1;
@@ -408,10 +410,10 @@ void ON_OFF()
 
 void setup(void)
 {
-  statSystem = 0;
+  
   pinMode(Pintombol, INPUT_PULLUP);
-  // attachInterrupt(digitalPinToInterrupt(Pintombol), ON_OFF, FALLING);
-
+  attachInterrupt(digitalPinToInterrupt(Pintombol), ON_OFF, FALLING);
+  
   ac.begin();
   nodemcuClient.setInsecure();
   dht.setup(2, DHTesp::DHT11);
@@ -422,15 +424,12 @@ void setup(void)
   set_OTA();
   Serial.println("Ready");
   Serial.println(WiFi.localIP());
-  
+  statSystem = 0;
 }
 
 void loop(void)
 { 
-  if(digitalRead(Pintombol) == HIGH)
-  {
-    ON_OFF();
-  }
+  ArduinoOTA.handle();
   if(statSystem == 1)
   {
     unsigned long waktu = millis();
@@ -439,7 +438,6 @@ void loop(void)
 
     MDNS.update();
     server.handleClient();
-    ArduinoOTA.handle();
     
     if (!client.connected())
     {
