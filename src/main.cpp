@@ -363,13 +363,6 @@ void nyalakanAC()
   ac.setFan(1);
   ac.setMode(kDaikinCool);
   ac.setTemp(25);
-
-  nilai = "";
-  nilai += String(nyalaSystem);
-  Serial.print("Publish nyala system : ");
-  Serial.println(nilai);
-  nilai.toCharArray(pesan, sizeof(pesan));
-  client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
 }
 
 void matikanAC()
@@ -378,12 +371,6 @@ void matikanAC()
   ac.off();
   lastAC = (millis() - waktuAC)/1000;
 
-  nilai = "";
-  nilai += String(nyalaSystem);
-  Serial.print("Publish nyala system : ");
-  Serial.println(nilai);
-  nilai.toCharArray(pesan, sizeof(pesan));
-  client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
 }
 
 void set_wifi()
@@ -434,14 +421,16 @@ void  ICACHE_RAM_ATTR ON_OFF()
   if (statSystem == 0)
     statSystem = 1;
   else if (statSystem == 1)
+  {
     statSystem = 0;
-
-  nilai = "";
-  nilai += String(statSystem);
-  Serial.print("Publish status system : ");
-  Serial.println(nilai);
-  nilai.toCharArray(pesan, sizeof(pesan));
-  client.publish("iot19202/kelompok_8/statAkhdan", pesan);
+    nilai = "";
+    nilai += String(statSystem);
+    Serial.print("Publish status system : ");
+    Serial.println(nilai);
+    nilai.toCharArray(pesan, sizeof(pesan));
+    client.publish("iot19202/kelompok_8/statAom", pesan);
+    client.publish("iot19202/kelompok_8/nyalaAom", pesan);
+  }
 }
 
 void setup(void)
@@ -517,7 +506,12 @@ void loop(void)
     if (waktu - lastMQTT > 2000)
     {
       lastMQTT = waktu;
-      
+      nilai = "";
+      nilai += String(nyalaSystem);
+      Serial.print("Publish nyala system : ");
+      Serial.println(nilai);
+      nilai.toCharArray(pesan, sizeof(pesan));
+      client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
       readsenDHT11();
 
       nilai = "";
