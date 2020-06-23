@@ -31,6 +31,7 @@ int statRlain[2];
 int nyalaRlain[2];
 int statSystem;
 int nyalaSystem;
+const byte Pintombol = 0;
 
 const int led = 16;
 int statlampu;
@@ -396,8 +397,21 @@ void set_wifi()
   server.begin();
   Serial.println("HTTP server started");
 }
+
+void ON_OFF()
+{
+  if (statSystem == 0)
+    statSystem = 1;
+  else if (statSystem == 1)
+    statSystem = 0;
+}
+
 void setup(void)
 {
+  statSystem = 0;
+  pinMode(Pintombol, INPUT_PULLUP);
+  // attachInterrupt(digitalPinToInterrupt(Pintombol), ON_OFF, FALLING);
+
   ac.begin();
   nodemcuClient.setInsecure();
   dht.setup(2, DHTesp::DHT11);
@@ -408,96 +422,102 @@ void setup(void)
   set_OTA();
   Serial.println("Ready");
   Serial.println(WiFi.localIP());
+  
 }
 
 void loop(void)
 { 
-  unsigned long waktu = millis();
-  int total_statSystem;
-  int total_nyalaSystem;
-
-  MDNS.update();
-  server.handleClient();
-  ArduinoOTA.handle();
-  
-  if (!client.connected())
+  if(digitalRead(Pintombol) == HIGH)
   {
-    reconnect();
+    ON_OFF();
   }
-  client.loop();
-
-  total_statSystem += statSystem;
-  for (int i = 0; i < 2; i++) {
-      total_statSystem += statRlain[i];
-  }
-
-  total_nyalaSystem += nyalaSystem;
-  for (int i = 0; i < 2; i++) {
-      total_nyalaSystem += nyalaRlain[i];
-  }
-
-  if (total_statSystem == 3 && (suhuRlain[0] > 25 || suhuRlain[1] > 25 || temperature > 25))
+  if(statSystem == 1)
   {
-    if (suhuRlain[0] < temperature && suhuRlain[1] < temperature && (suhuRlain[0] < 24 || suhuRlain[1] < 24)
-    && nyalaSystem == 0)
-    {
-      nyalakanAC();
-    }
-    else if (temperature < 24 && total_nyalaSystem > 1)
-    {
-      matikanAC();
-    }
-    if (total_nyalaSystem < 2 && (suhuRlain[0] < temperature && suhuRlain[1] > temperature || suhuRlain[0] > temperature && suhuRlain[1] < temperature))
-    {
-      nyalakanAC();
-    }
-  }
-  else if (total_statSystem < 3)
-  {
-    nyalakanAC();
-  }
+    unsigned long waktu = millis();
+    int total_statSystem;
+    int total_nyalaSystem;
 
-  if (waktu - lastMQTT > 2000)
-  {
-    lastMQTT = waktu;
-    nilai = "";
-    nilai += String(statSystem);
-    Serial.print("Publish status system : ");
-    Serial.println(nilai);
-    nilai.toCharArray(pesan, sizeof(pesan));
-    client.publish("iot19202/kelompok_8/statAkhdan", pesan);
-
-    nilai = "";
-    nilai += String(nyalaSystem);
-    Serial.print("Publish nyala system : ");
-    Serial.println(nilai);
-    nilai.toCharArray(pesan, sizeof(pesan));
-    client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
+    MDNS.update();
+    server.handleClient();
+    ArduinoOTA.handle();
     
-    readsenDHT11();
+    if (!client.connected())
+    {
+      reconnect();
+    }
+    client.loop();
 
-    nilai = "";
-    nilai += String(temperature);
-    nilai += " Derajat";
-    Serial.print("Publish suhu: ");
-    Serial.println(nilai);
-    nilai.toCharArray(pesan, sizeof(pesan));
-    client.publish("iot19202/kelompok_8/suhuAkhdan", pesan);
+    total_statSystem = statSystem;
+    for (int i = 0; i < 2; i++) {
+        total_statSystem += statRlain[i];
+    }
 
-    nilai = "";
-    nilai += String(humidity);
-    nilai += "%";
-    Serial.print("Publish kelembaban: ");
-    Serial.println(nilai);
-    nilai.toCharArray(pesan, sizeof(pesan));
-    client.publish("iot19202/kelompok_8/kelembabanAkhdan", pesan);
+    total_nyalaSystem = nyalaSystem;
+    for (int i = 0; i < 2; i++) {
+        total_nyalaSystem += nyalaRlain[i];
+    }
 
-    sendData(temperature, humidity, nyalaSystem);
-  }
+    if (total_statSystem == 3 && (suhuRlain[0] > 25 || suhuRlain[1] > 25 || temperature > 25))
+    {
+      if (suhuRlain[0] < temperature && suhuRlain[1] < temperature && (suhuRlain[0] < 24 || suhuRlain[1] < 24)
+      && nyalaSystem == 0)
+      {
+        nyalakanAC();
+      }
+      else if (temperature < 24 && total_nyalaSystem > 1)
+      {
+        matikanAC();
+      }
+      if (total_nyalaSystem < 2 && ((suhuRlain[0] < temperature && suhuRlain[1] > temperature) || (suhuRlain[0] > temperature && suhuRlain[1] < temperature)))
+      {
+        nyalakanAC();
+      }
+    }
+    else if (total_statSystem < 3)
+    {
+      nyalakanAC();
+    }
 
-  if (waktu - lastMQTT > 30000)
-  {
-    lastMQTT = waktu;
-    sendData(temperature, humidity, nyalaSystem);
-  }
+    if (waktu - lastMQTT > 2000)
+    {
+      lastMQTT = waktu;
+      nilai = "";
+      nilai += String(statSystem);
+      Serial.print("Publish status system : ");
+      Serial.println(nilai);
+      nilai.toCharArray(pesan, sizeof(pesan));
+      client.publish("iot19202/kelompok_8/statAkhdan", pesan);
+
+      nilai = "";
+      nilai += String(nyalaSystem);
+      Serial.print("Publish nyala system : ");
+      Serial.println(nilai);
+      nilai.toCharArray(pesan, sizeof(pesan));
+      client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
+      
+      readsenDHT11();
+
+      nilai = "";
+      nilai += String(temperature);
+      nilai += " Derajat";
+      Serial.print("Publish suhu: ");
+      Serial.println(nilai);
+      nilai.toCharArray(pesan, sizeof(pesan));
+      client.publish("iot19202/kelompok_8/suhuAkhdan", pesan);
+
+      nilai = "";
+      nilai += String(humidity);
+      nilai += "%";
+      Serial.print("Publish kelembaban: ");
+      Serial.println(nilai);
+      nilai.toCharArray(pesan, sizeof(pesan));
+      client.publish("iot19202/kelompok_8/kelembabanAkhdan", pesan);
+    }
+
+    if (waktu - lastGSHEET > 30000)
+    {
+      lastGSHEET = waktu;
+      sendData(temperature, humidity, nyalaSystem);
+    }
+  } 
 }
