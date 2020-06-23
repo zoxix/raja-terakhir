@@ -17,7 +17,7 @@ const char *password = "123456789987654321";
 const char *mqtt_server = "ee.unsoed.ac.id";
 const char* host = "script.google.com";
 const int httpsPort = 443;
-String GAS_ID = "AKfycbxd_pQTqVVkPkaixGvgaaypAU2UNuRTzBvMA0vswkGz7xg0XGo";
+String GAS_ID = "AKfycbxSoZHMG5Yk1J-9Uxg7wRr6xXUhRMOFkuOP4fcbAU9sZSF5i5dG";
 
 DHTesp dht;
 ESP8266WebServer server(80);
@@ -53,7 +53,8 @@ char pesan[100];
 void readsenDHT11()
 {
   humidity = dht.getHumidity();
-  temperature = dht.getTemperature();
+  temperature = 20;
+  // temperature = dht.getTemperature();
 }
 void led_on()
 {
@@ -168,7 +169,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     Serial.println();
     buff_p[length] = '\0';
     msg_p = String(buff_p);
-    suhuRlain[0] = msg_p.toInt(); // to Int
+    suhuRlain[1] = msg_p.toInt(); // to Int
   }
   else if(strcmp(topic, "iot19202/kelompok_8/statAgung")==0)
   {
@@ -243,6 +244,8 @@ void reconnect()
       client.subscribe("iot19202/kelompok_8/suhuAom");
       client.subscribe("iot19202/kelompok_8/statAgung");
       client.subscribe("iot19202/kelompok_8/statAom");
+      client.subscribe("iot19202/kelompok_8/nyalaAgung");
+      client.subscribe("iot19202/kelompok_8/nyalaAom");
     }
     else
     {
@@ -256,7 +259,7 @@ void reconnect()
 
 void sendData(int tem, int hum, int nyala, int waktu)
 {
-  String NoNode = "node2";
+  String NoNode = "node1";
   Serial.print("connecting to ");
   Serial.println(host);
   if (!nodemcuClient.connect(host, httpsPort)) {
@@ -360,6 +363,13 @@ void nyalakanAC()
   ac.setFan(1);
   ac.setMode(kDaikinCool);
   ac.setTemp(25);
+
+  nilai = "";
+  nilai += String(nyalaSystem);
+  Serial.print("Publish nyala system : ");
+  Serial.println(nilai);
+  nilai.toCharArray(pesan, sizeof(pesan));
+  client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
 }
 
 void matikanAC()
@@ -367,6 +377,13 @@ void matikanAC()
   nyalaSystem = 0;
   ac.off();
   lastAC = (millis() - waktuAC)/1000;
+
+  nilai = "";
+  nilai += String(nyalaSystem);
+  Serial.print("Publish nyala system : ");
+  Serial.println(nilai);
+  nilai.toCharArray(pesan, sizeof(pesan));
+  client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
 }
 
 void set_wifi()
@@ -418,6 +435,13 @@ void  ICACHE_RAM_ATTR ON_OFF()
     statSystem = 1;
   else if (statSystem == 1)
     statSystem = 0;
+
+  nilai = "";
+  nilai += String(statSystem);
+  Serial.print("Publish status system : ");
+  Serial.println(nilai);
+  nilai.toCharArray(pesan, sizeof(pesan));
+  client.publish("iot19202/kelompok_8/statAkhdan", pesan);
 }
 
 void setup(void)
@@ -437,6 +461,7 @@ void setup(void)
   Serial.println("Ready");
   Serial.println(WiFi.localIP());
   statSystem = 0;
+  matikanAC();
 }
 
 void loop(void)
@@ -466,12 +491,12 @@ void loop(void)
     for (int i = 0; i < 2; i++) {
         total_nyalaSystem += nyalaRlain[i];
     }
-
     if (total_statSystem == 3 && (suhuRlain[0] > 25 || suhuRlain[1] > 25 || temperature > 25))
     {
       if (suhuRlain[0] < temperature && suhuRlain[1] < temperature && (suhuRlain[0] < 24 || suhuRlain[1] < 24)
       && nyalaSystem == 0)
       {
+        Serial.println("mashok");
         nyalakanAC();
       }
       else if (temperature < 24 && total_nyalaSystem > 1)
@@ -492,19 +517,6 @@ void loop(void)
     if (waktu - lastMQTT > 2000)
     {
       lastMQTT = waktu;
-      nilai = "";
-      nilai += String(statSystem);
-      Serial.print("Publish status system : ");
-      Serial.println(nilai);
-      nilai.toCharArray(pesan, sizeof(pesan));
-      client.publish("iot19202/kelompok_8/statAkhdan", pesan);
-
-      nilai = "";
-      nilai += String(nyalaSystem);
-      Serial.print("Publish nyala system : ");
-      Serial.println(nilai);
-      nilai.toCharArray(pesan, sizeof(pesan));
-      client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
       
       readsenDHT11();
 
@@ -535,6 +547,5 @@ void loop(void)
   if(statSystem == 0)
   {
     matikanAC();
-    
   } 
 }
