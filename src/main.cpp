@@ -42,6 +42,7 @@ unsigned long waktuAC;
 unsigned long lastAC = 0;
 unsigned long lastMQTT = 0;
 unsigned long lastGSHEET = 0;
+unsigned long akumulasi_waktuAC = 0;
 #define MSG_BUFFER_SIZE (50)
 char msg[MSG_BUFFER_SIZE];
 int value = 0;
@@ -370,7 +371,7 @@ void matikanAC()
   nyalaSystem = 0;
   ac.off();
   lastAC = (millis() - waktuAC)/1000;
-
+  akumulasi_waktuAC = lastAC; 
 }
 
 void set_wifi()
@@ -534,8 +535,8 @@ void loop(void)
     if (waktu - lastGSHEET > 30000)
     {
       lastGSHEET = waktu;
-      lastAC = (millis() - waktuAC)/1000;
-      sendData(temperature, humidity, nyalaSystem, lastAC);
+      // lastAC = (millis() - waktuAC)/1000;
+      sendData(temperature, humidity, nyalaSystem, akumulasi_waktuAC);
     }
   }
   if(statSystem == 0)
