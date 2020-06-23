@@ -37,6 +37,9 @@ const byte Pintombol = 0;
 
 const int led = 16;
 int statlampu;
+unsigned long waktu;
+unsigned long waktuAC;
+unsigned long lastAC = 0;
 unsigned long lastMQTT = 0;
 unsigned long lastGSHEET = 0;
 #define MSG_BUFFER_SIZE (50)
@@ -251,9 +254,9 @@ void reconnect()
   }
 }
 
-void sendData(int tem, int hum, int nyala)
+void sendData(int tem, int hum, int nyala, int waktu)
 {
-  String NoNode = "node1";
+  String NoNode = "node2";
   Serial.print("connecting to ");
   Serial.println(host);
   if (!nodemcuClient.connect(host, httpsPort)) {
@@ -263,11 +266,12 @@ void sendData(int tem, int hum, int nyala)
   String string_temperature =  String(tem, DEC); 
   String string_humidity =  String(hum, DEC); 
   String string_nyalaAC;
+  String string_waktu_nyalaAC = String (waktu, DEC);
   if (nyala == 1)
     string_nyalaAC =  "Menyala";
   else
     string_nyalaAC =  "Mati";
-  String url = "/macros/s/" + GAS_ID + "/exec?" + NoNode +"&temperature=" + string_temperature + "&humidity=" + string_humidity + "&statAC=" + string_nyalaAC;
+  String url = "/macros/s/" + GAS_ID + "/exec?" + NoNode +"&temperature=" + string_temperature + "&humidity=" + string_humidity + "&statAC=" + string_nyalaAC + "&waktu_nyalaAC=" + string_waktu_nyalaAC;
   Serial.print("requesting URL: ");
   Serial.println(url);
 
@@ -295,6 +299,7 @@ void sendData(int tem, int hum, int nyala)
   Serial.println(line);
   Serial.println("==========");
   Serial.println("closing connection");
+  
 } 
 void set_OTA()
 {
@@ -346,6 +351,11 @@ void set_OTA()
 
 void nyalakanAC()
 {
+  if (lastAC == 0)
+  {
+    waktuAC = millis();
+  }
+  nyalaSystem = 1;
   ac.on();
   ac.setFan(1);
   ac.setMode(kDaikinCool);
@@ -354,7 +364,9 @@ void nyalakanAC()
 
 void matikanAC()
 {
+  nyalaSystem = 0;
   ac.off();
+  lastAC = (millis() - waktuAC)/1000;
 }
 
 void set_wifi()
@@ -432,7 +444,7 @@ void loop(void)
   ArduinoOTA.handle();
   if(statSystem == 1)
   {
-    unsigned long waktu = millis();
+    waktu = millis();
     int total_statSystem;
     int total_nyalaSystem;
 
@@ -465,6 +477,7 @@ void loop(void)
       else if (temperature < 24 && total_nyalaSystem > 1)
       {
         matikanAC();
+        lastAC = 0;
       }
       if (total_nyalaSystem < 2 && ((suhuRlain[0] < temperature && suhuRlain[1] > temperature) || (suhuRlain[0] > temperature && suhuRlain[1] < temperature)))
       {
@@ -515,7 +528,13 @@ void loop(void)
     if (waktu - lastGSHEET > 30000)
     {
       lastGSHEET = waktu;
-      sendData(temperature, humidity, nyalaSystem);
+      lastAC = (millis() - waktuAC)/1000;
+      sendData(temperature, humidity, nyalaSystem, lastAC);
     }
+  }
+  if(statSystem == 0)
+  {
+    matikanAC();
+    
   } 
 }
