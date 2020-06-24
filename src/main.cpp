@@ -73,18 +73,6 @@ void led_off()
 }
 void handleRoot()
 {
-  if (server.hasArg("lampu"))
-  {
-    
-    if (server.arg("lampu") == "1")
-    {
-      led_on();
-    }
-    else if (server.arg("lampu") == "0")
-    {
-      led_off();
-    }
-  }
   String IP = WiFi.localIP().toString();
   String html;
   html += "<html>";
@@ -108,15 +96,6 @@ void handleRoot()
   html += "</p>";
   html += "<p>Pembacaan kelembaban : ";
   html += humidity;
-  html += "</p>";
-  html += "<h3>Kendali Lampu";
-  html += "</h3>";
-  if (statlampu == true)
-    html += "<p>Status Lampu : NYALA BOR</p>";
-  else
-    html += "<p>Status Lampu : MATI BOR</p>";
-  html += "</h3>";
-  html += "<p>Kontrol Lampu : <a href=\"/?lampu=1\"><button type='button'>ON!</button></a>&nbsp;<a href=\"/?lampu=0\"> <button type='button'>OFF</button> </a>";
   html += "</p>";
   html += "</body>";
   html += "</html>";
@@ -226,6 +205,27 @@ void callback(char *topic, byte *payload, unsigned int length)
     } 
     else if((char)payload[0] == '0') {
       nyalaRlain[1] = 0;
+    }
+  }
+  else if(strcmp(topic, "iot19202/kelompok_8/statAkhdan")==0)
+  {
+    for (int i = 0; i < length; i++) {
+      Serial.print((char)payload[i]);
+    }
+    Serial.println();
+    
+    if ((char)payload[0] == '1') {
+      statSystem = 1;
+    } 
+    else if((char)payload[0] == '0') {
+      statSystem = 0;
+      nilai = "";
+      nilai += String(statSystem);
+      Serial.print("Publish status system : ");
+      Serial.println(nilai);
+      nilai.toCharArray(pesan, sizeof(pesan));
+      client.publish("iot19202/kelompok_8/statAkhdan", pesan);
+      client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
     }
   }
 }
