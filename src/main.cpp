@@ -421,12 +421,6 @@ void  ICACHE_RAM_ATTR ON_OFF()
   if (statSystem == 0)
     {
       statSystem = 1;
-      nilai = "";
-      nilai += String(statSystem);
-      Serial.print("Publish status system : ");
-      Serial.println(nilai);
-      nilai.toCharArray(pesan, sizeof(pesan));
-      client.publish("iot19202/kelompok_8/statAkhdan", pesan);
     }
   else if (statSystem == 1)
   {
@@ -497,7 +491,7 @@ void loop(void)
         Serial.println("mashok");
         nyalakanAC();
       }
-      else if (temperature < 24 && total_nyalaSystem > 1)
+      else if (temperature < 24 && suhuRlain[0] > temperature && suhuRlain[1] > temperature &&  total_nyalaSystem > 1)
       {
         akumulasi_waktuAC += lastAC; 
         matikanAC();
@@ -522,6 +516,14 @@ void loop(void)
       Serial.println(nilai);
       nilai.toCharArray(pesan, sizeof(pesan));
       client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
+
+      nilai = "";
+      nilai += String(statSystem);
+      Serial.print("Publish status system : ");
+      Serial.println(nilai);
+      nilai.toCharArray(pesan, sizeof(pesan));
+      client.publish("iot19202/kelompok_8/statAkhdan", pesan);
+
       readsenDHT11();
 
       nilai = "";
