@@ -110,13 +110,18 @@ void handleNotFound()
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
   char buff_p[length];
   String msg_p;
   if(strcmp(topic, "iot19202/kelompok_8/suhuAgung")==0)
   {
     for (int i = 0; i < length; i++) {
+      Serial.print((char)payload[i]);
       buff_p[i] = (char)payload[i];
     }
+    Serial.println();
     buff_p[length] = '\0';
     msg_p = String(buff_p);
     suhuRlain[0] = msg_p.toInt(); // to Int
@@ -124,14 +129,21 @@ void callback(char *topic, byte *payload, unsigned int length)
   else if(strcmp(topic, "iot19202/kelompok_8/suhuAom")==0)
   {
     for (int i = 0; i < length; i++) {
+      Serial.print((char)payload[i]);
       buff_p[i] = (char)payload[i];
     }
+    Serial.println();
     buff_p[length] = '\0';
     msg_p = String(buff_p);
     suhuRlain[1] = msg_p.toInt(); // to Int
   }
   else if(strcmp(topic, "iot19202/kelompok_8/statAgung")==0)
   {
+    for (int i = 0; i < length; i++) {
+      Serial.print((char)payload[i]);
+    }
+    Serial.println();
+    
     if ((char)payload[0] == '1') {
       statRlain[0] = 1;
     } 
@@ -141,6 +153,11 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
   else if(strcmp(topic, "iot19202/kelompok_8/statAom")==0)
   {
+    for (int i = 0; i < length; i++) {
+      Serial.print((char)payload[i]);
+    }
+    Serial.println();
+    
     if ((char)payload[0] == '1') {
       statRlain[1] = 1;
     } 
@@ -150,6 +167,11 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
   else if(strcmp(topic, "iot19202/kelompok_8/nyalaAgung")==0)
   {
+    for (int i = 0; i < length; i++) {
+      Serial.print((char)payload[i]);
+    }
+    Serial.println();
+    
     if ((char)payload[0] == '1') {
       nyalaRlain[0] = 1;
     } 
@@ -159,6 +181,11 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
   else if(strcmp(topic, "iot19202/kelompok_8/nyalaAom")==0)
   {
+    for (int i = 0; i < length; i++) {
+      Serial.print((char)payload[i]);
+    }
+    Serial.println();
+    
     if ((char)payload[0] == '1') {
       nyalaRlain[1] = 1;
     } 
@@ -168,6 +195,11 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
   else if(strcmp(topic, "iot19202/kelompok_8/statAkhdan")==0)
   {
+    for (int i = 0; i < length; i++) {
+      Serial.print((char)payload[i]);
+    }
+    Serial.println();
+    
     if ((char)payload[0] == '1') {
       statSystem = 1;
     } 
@@ -187,7 +219,7 @@ void reconnect()
 {
   while (!client.connected())
   {
-    Serial.print("Mengkoneksi ke MQTT...");
+    Serial.print("Attempting MQTT connection...");
     String clientId = "ESP8266Client-";
     clientId += String(random(0xffff), HEX);
 
@@ -204,9 +236,9 @@ void reconnect()
     }
     else
     {
-      Serial.print("Gagal, rc=");
+      Serial.print("failed, rc=");
       Serial.print(client.state());
-      Serial.println(" Mecoba reconnect dalam 5 detik");
+      Serial.println(" try again in 5 seconds");
       delay(5000);
     }
   }
@@ -215,10 +247,10 @@ void reconnect()
 void sendData(int tem, int hum, int nyala, int waktu)
 {
   String NoNode = "node1";
-  Serial.print("Mengkoneski ke ");
+  Serial.print("connecting to ");
   Serial.println(host);
   if (!nodemcuClient.connect(host, httpsPort)) {
-    Serial.println("Koneksi gaga;");
+    Serial.println("connection failed");
     return;
   }
   String string_temperature =  String(tem, DEC); 
@@ -230,7 +262,7 @@ void sendData(int tem, int hum, int nyala, int waktu)
   else
     string_nyalaAC =  "Mati";
   String url = "/macros/s/" + GAS_ID + "/exec?" + NoNode +"&temperature=" + string_temperature + "&humidity=" + string_humidity + "&statAC=" + string_nyalaAC + "&waktu_nyalaAC=" + string_waktu_nyalaAC;
-  Serial.print("Meminta URL: ");
+  Serial.print("requesting URL: ");
   Serial.println(url);
 
   nodemcuClient.print(String("GET ") + url + " HTTP/1.1\r\n" +
@@ -238,19 +270,25 @@ void sendData(int tem, int hum, int nyala, int waktu)
          "User-Agent: BuildFailureDetectorESP8266\r\n" +
          "Connection: close\r\n\r\n");
 
-  Serial.println("Permintaan dikirim");
+  Serial.println("request sent");
   while (nodemcuClient.connected()) {
     String line = nodemcuClient.readStringUntil('\n');
     if (line == "\r") {
-      Serial.println("Header di terima");
+      Serial.println("headers received");
       break;
     }
   }
   String line = nodemcuClient.readStringUntil('\n');
   if (line.startsWith("{\"state\":\"success\"")) {
-    Serial.println("esp8266/Arduino CI Berhasil!");
+    Serial.println("esp8266/Arduino CI successfull!");
+  } else {
+    Serial.println("esp8266/Arduino CI has failed");
   }
-  Serial.println("Mendapat Balasan dan Menutup Koneksi");
+  Serial.println("reply was:");
+  Serial.println("==========");
+  Serial.println(line);
+  Serial.println("==========");
+  Serial.println("closing connection");
   
 } 
 void set_OTA()
@@ -266,10 +304,11 @@ void set_OTA()
       type = "filesystem";
     }
 
-    Serial.println("Memulai Update " + type);
+    // NOTE: if updating FS this would be the place to unmount FS using FS.end()
+    Serial.println("Start updating " + type);
   });
   ArduinoOTA.onEnd([]() {
-    Serial.println("\nBerakhir");
+    Serial.println("\nEnd");
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
@@ -333,14 +372,14 @@ void set_wifi()
     Serial.print(".");
   }
   Serial.println("");
-  Serial.print("Mengkonesi ke ");
+  Serial.print("Connected to ");
   Serial.println(ssid);
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
   if (MDNS.begin("esp8266"))
   {
-    Serial.println("MDNS responder dimulai");
+    Serial.println("MDNS responder started");
   }
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
@@ -348,6 +387,14 @@ void set_wifi()
   statLED = 0;
 
   server.on("/", handleRoot);
+
+  server.on("/led_hidup", led_on);
+
+  server.on("/led_mati", led_off);
+
+  server.on("/inline", []() {
+    server.send(200, "text/plain", "this works as well");
+  });
 
   server.onNotFound(handleNotFound);
 
@@ -366,6 +413,8 @@ void  ICACHE_RAM_ATTR ON_OFF()
     statSystem = 0;
     nilai = "";
     nilai += String(statSystem);
+    Serial.print("Publish status system : ");
+    Serial.println(nilai);
     nilai.toCharArray(pesan, sizeof(pesan));
     client.publish("iot19202/kelompok_8/statAkhdan", pesan);
     client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
@@ -386,7 +435,8 @@ void setup(void)
   Serial.begin(115200);
   set_wifi();
   set_OTA();
-  Serial.println("Siap jalan");
+  Serial.println("Ready");
+  Serial.println(WiFi.localIP());
   statSystem = 0;
   matikanAC();
   akumulasi_waktuAC = 0;
@@ -424,6 +474,7 @@ void loop(void)
       if (suhuRlain[0] < temperature && suhuRlain[1] < temperature && (suhuRlain[0] < 24 || suhuRlain[1] < 24)
       && nyalaSystem == 0)
       {
+        Serial.println("mashok");
         nyalakanAC();
       }
       else if (temperature < 24 && suhuRlain[0] > temperature && suhuRlain[1] > temperature &&  total_nyalaSystem > 1)
@@ -447,11 +498,15 @@ void loop(void)
       lastMQTT = waktu;
       nilai = "";
       nilai += String(nyalaSystem);
+      Serial.print("Publish nyala system : ");
+      Serial.println(nilai);
       nilai.toCharArray(pesan, sizeof(pesan));
       client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
 
       nilai = "";
       nilai += String(statSystem);
+      Serial.print("Publish status system : ");
+      Serial.println(nilai);
       nilai.toCharArray(pesan, sizeof(pesan));
       client.publish("iot19202/kelompok_8/statAkhdan", pesan);
 
@@ -468,12 +523,16 @@ void loop(void)
       nilai = "";
       nilai += String(humidity);
       nilai += "%";
+      Serial.print("Publish kelembaban: ");
+      Serial.println(nilai);
       nilai.toCharArray(pesan, sizeof(pesan));
       client.publish("iot19202/kelompok_8/kelembabanAkhdan", pesan);
 
       nilai = "";
       akumulasi_waktuAC += lastAC;
       nilai += String(akumulasi_waktuAC);
+      Serial.print("Publish Akumulasi Waktu: ");
+      Serial.println(nilai);
       nilai.toCharArray(pesan, sizeof(pesan));
       client.publish("iot19202/kelompok_8/waktuACAkhdan", pesan);
       akumulasi_waktuAC -= lastAC;
