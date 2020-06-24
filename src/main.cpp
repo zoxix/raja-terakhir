@@ -54,7 +54,7 @@ char pesan[100];
 void readsenDHT11()
 {
   humidity = dht.getHumidity();
-  temperature = 20;
+  temperature = 23;
   // temperature = dht.getTemperature();
 }
 void led_on()
@@ -224,7 +224,6 @@ void callback(char *topic, byte *payload, unsigned int length)
       Serial.print("Publish status system : ");
       Serial.println(nilai);
       nilai.toCharArray(pesan, sizeof(pesan));
-      client.publish("iot19202/kelompok_8/statAkhdan", pesan);
       client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
     }
   }
@@ -245,6 +244,7 @@ void reconnect()
       client.subscribe("iot19202/kelompok_8/suhuAom");
       client.subscribe("iot19202/kelompok_8/statAgung");
       client.subscribe("iot19202/kelompok_8/statAom");
+      client.subscribe("iot19202/kelompok_8/statAkhdan");
       client.subscribe("iot19202/kelompok_8/nyalaAgung");
       client.subscribe("iot19202/kelompok_8/nyalaAom");
     }
@@ -459,6 +459,11 @@ void setup(void)
 void loop(void)
 { 
   ArduinoOTA.handle();
+  if (!client.connected())
+    {
+      reconnect();
+    }
+  client.loop();
   if(statSystem == 1)
   {
     waktu = millis();
@@ -467,12 +472,7 @@ void loop(void)
 
     MDNS.update();
     server.handleClient();
-    
-    if (!client.connected())
-    {
-      reconnect();
-    }
-    client.loop();
+
 
     total_statSystem = statSystem;
     for (int i = 0; i < 2; i++) {
