@@ -193,7 +193,7 @@ void callback(char *topic, byte *payload, unsigned int length)
       nyalaRlain[1] = 0;
     }
   }
-  else if(strcmp(topic, "iot19202/kelompok_8/statAkhdan")==0)
+  else if(strcmp(topic, "iot19202/kelompok_8/KontrolAkhdan")==0)
   {
     for (int i = 0; i < length; i++) {
       Serial.print((char)payload[i]);
@@ -230,7 +230,7 @@ void reconnect()
       client.subscribe("iot19202/kelompok_8/suhuAom");
       client.subscribe("iot19202/kelompok_8/statAgung");
       client.subscribe("iot19202/kelompok_8/statAom");
-      client.subscribe("iot19202/kelompok_8/statAkhdan");
+      client.subscribe("iot19202/kelompok_8/KontrolAkhdan");
       client.subscribe("iot19202/kelompok_8/nyalaAgung");
       client.subscribe("iot19202/kelompok_8/nyalaAom");
     }

@@ -36,7 +36,7 @@ int statSystem;
 int nyalaSystem;
 const byte Pintombol = 0;
 
-const int led = 5;
+const int led = 16;
 int statlampu;
 unsigned long waktu;
 unsigned long waktuAC;
@@ -403,7 +403,6 @@ void loop(void)
   client.loop();
   if(statSystem == 1)
   {
-    digitalWrite(led, 1);
     waktu = millis();
     int total_statSystem;
     int total_nyalaSystem;
@@ -492,7 +491,6 @@ void loop(void)
   }
   else if(statSystem == 0)
   {
-    digitalWrite(led, 0);
     akumulasi_waktuAC += lastAC; 
     matikanAC();
     lastAC = 0;
