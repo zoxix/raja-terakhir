@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
@@ -166,7 +167,7 @@ void callback(char *topic, byte *payload, unsigned int length)
       nyalaRlain[1] = 0;
     }
   }
-  else if(strcmp(topic, "iot19202/kelompok_8/statAkhdan")==0)
+  else if(strcmp(topic, "iot19202/kelompok_8/KontrolAkhdan")==0)
   {
     if ((char)payload[0] == '1') {
       statSystem = 1;
@@ -198,7 +199,7 @@ void reconnect()
       client.subscribe("iot19202/kelompok_8/suhuAom");
       client.subscribe("iot19202/kelompok_8/statAgung");
       client.subscribe("iot19202/kelompok_8/statAom");
-      client.subscribe("iot19202/kelompok_8/statAkhdan");
+      client.subscribe("iot19202/kelompok_8/KontrolAkhdan");
       client.subscribe("iot19202/kelompok_8/nyalaAgung");
       client.subscribe("iot19202/kelompok_8/nyalaAom");
     }
