@@ -371,7 +371,6 @@ void matikanAC()
   nyalaSystem = 0;
   ac.off();
   lastAC = (millis() - waktuAC)/1000;
-  akumulasi_waktuAC = lastAC; 
 }
 
 void set_wifi()
@@ -420,7 +419,15 @@ void set_wifi()
 void  ICACHE_RAM_ATTR ON_OFF()
 {
   if (statSystem == 0)
-    statSystem = 1;
+    {
+      statSystem = 1;
+      nilai = "";
+      nilai += String(statSystem);
+      Serial.print("Publish status system : ");
+      Serial.println(nilai);
+      nilai.toCharArray(pesan, sizeof(pesan));
+      client.publish("iot19202/kelompok_8/statAkhdan", pesan);
+    }
   else if (statSystem == 1)
   {
     statSystem = 0;
@@ -429,8 +436,8 @@ void  ICACHE_RAM_ATTR ON_OFF()
     Serial.print("Publish status system : ");
     Serial.println(nilai);
     nilai.toCharArray(pesan, sizeof(pesan));
-    client.publish("iot19202/kelompok_8/statAom", pesan);
-    client.publish("iot19202/kelompok_8/nyalaAom", pesan);
+    client.publish("iot19202/kelompok_8/statAkhdan", pesan);
+    client.publish("iot19202/kelompok_8/nyalaAkhdan", pesan);
   }
 }
 
@@ -452,6 +459,7 @@ void setup(void)
   Serial.println(WiFi.localIP());
   statSystem = 0;
   matikanAC();
+  akumulasi_waktuAC = 0;
 }
 
 void loop(void)
@@ -491,15 +499,16 @@ void loop(void)
       }
       else if (temperature < 24 && total_nyalaSystem > 1)
       {
+        akumulasi_waktuAC += lastAC; 
         matikanAC();
         lastAC = 0;
       }
-      if (total_nyalaSystem < 2 && ((suhuRlain[0] < temperature && suhuRlain[1] > temperature) || (suhuRlain[0] > temperature && suhuRlain[1] < temperature)))
+      if (total_nyalaSystem < 2 && nyalaSystem == 0 && ((suhuRlain[0] < temperature && suhuRlain[1] > temperature) || (suhuRlain[0] > temperature && suhuRlain[1] < temperature)))
       {
         nyalakanAC();
       }
     }
-    else if (total_statSystem < 3)
+    else if (total_statSystem < 3 && nyalaSystem == 0)
     {
       nyalakanAC();
     }
@@ -530,17 +539,30 @@ void loop(void)
       Serial.println(nilai);
       nilai.toCharArray(pesan, sizeof(pesan));
       client.publish("iot19202/kelompok_8/kelembabanAkhdan", pesan);
+
+      nilai = "";
+      akumulasi_waktuAC += lastAC;
+      nilai += String(akumulasi_waktuAC);
+      Serial.print("Publish Akumulasi Waktu: ");
+      Serial.println(nilai);
+      nilai.toCharArray(pesan, sizeof(pesan));
+      client.publish("iot19202/kelompok_8/waktuACAkhdan", pesan);
+      akumulasi_waktuAC -= lastAC;
     }
 
     if (waktu - lastGSHEET > 30000)
     {
       lastGSHEET = waktu;
-      // lastAC = (millis() - waktuAC)/1000;
+      lastAC = (millis() - waktuAC)/1000;
+      akumulasi_waktuAC += lastAC; 
       sendData(temperature, humidity, nyalaSystem, akumulasi_waktuAC);
+      akumulasi_waktuAC -= lastAC;
     }
   }
-  if(statSystem == 0)
+  else if(statSystem == 0)
   {
+    akumulasi_waktuAC += lastAC; 
     matikanAC();
+    lastAC = 0;
   } 
 }
